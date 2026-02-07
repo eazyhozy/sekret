@@ -31,5 +31,8 @@ go.work.sum
 .idea/
 .vscode/
 
+# Build output
+sekret
+
 # Claude Code
 CLAUDE.md
