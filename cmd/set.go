@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/eazyhozy/sekret/internal/registry"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var setCmd = &cobra.Command{
@@ -37,18 +35,16 @@ func runSet(_ *cobra.Command, args []string) error {
 
 	// Show current masked value
 	if current, err := store.Get(name); err == nil {
-		fmt.Fprintf(os.Stderr, "  Current: %s\n", maskKey(current))
+		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Current: %s\n", maskKey(current))
 	}
 
 	// Read new key interactively
-	fmt.Fprint(os.Stderr, "  New API Key: ")
-	password, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Fprintln(os.Stderr)
+	value, err := readPassword("  New API Key: ")
 	if err != nil {
-		return fmt.Errorf("failed to read key: %w", err)
+		return err
 	}
 
-	value := strings.TrimSpace(string(password))
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return fmt.Errorf("key cannot be empty")
 	}
@@ -56,7 +52,7 @@ func runSet(_ *cobra.Command, args []string) error {
 	// Validate format for known keys
 	regEntry := registry.Lookup(name)
 	if regEntry != nil && !registry.ValidateFormat(regEntry, value) {
-		fmt.Fprintf(os.Stderr, "  Warning: key does not match expected format for %q (expected prefix: %s)\n",
+		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Warning: key does not match expected format for %q (expected prefix: %s)\n",
 			name, strings.Join(regEntry.Prefixes, " or "))
 	}
 
@@ -65,6 +61,6 @@ func runSet(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintln(os.Stderr, "  Updated")
+	_, _ = fmt.Fprintln(rootCmd.ErrOrStderr(), "  Updated")
 	return nil
 }

@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
@@ -35,16 +33,12 @@ func runRemove(_ *cobra.Command, args []string) error {
 	}
 
 	// Confirmation prompt
-	fmt.Fprintf(os.Stderr, "  Remove '%s' (%s)? [y/N]: ", name, entry.EnvVar)
-	reader := bufio.NewReader(os.Stdin)
-	answer, err := reader.ReadString('\n')
+	confirmed, err := readConfirm(fmt.Sprintf("  Remove '%s' (%s)? [y/N]: ", name, entry.EnvVar))
 	if err != nil {
-		return fmt.Errorf("failed to read confirmation: %w", err)
+		return err
 	}
-
-	answer = strings.TrimSpace(strings.ToLower(answer))
-	if answer != "y" && answer != "yes" {
-		fmt.Fprintln(os.Stderr, "  Cancelled")
+	if !confirmed {
+		_, _ = fmt.Fprintln(rootCmd.ErrOrStderr(), "  Cancelled")
 		return nil
 	}
 
@@ -61,6 +55,6 @@ func runRemove(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintln(os.Stderr, "  Removed")
+	_, _ = fmt.Fprintln(rootCmd.ErrOrStderr(), "  Removed")
 	return nil
 }

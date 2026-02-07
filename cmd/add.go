@@ -2,16 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"regexp"
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/eazyhozy/sekret/internal/registry"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
-
-var addEnvFlag string
 
 var addCmd = &cobra.Command{
 	Use:   "add <name>",
@@ -28,46 +25,22 @@ For custom keys, use the --env flag:
 }
 
 func init() {
-	addCmd.Flags().StringVar(&addEnvFlag, "env", "", "environment variable name (required for custom keys)")
+	addCmd.Flags().String("env", "", "environment variable name (required for custom keys)")
 	rootCmd.AddCommand(addCmd)
 }
 
-func isValidName(name string) bool {
-	if name == "" {
-		return false
-	}
-	for _, c := range name {
-		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
-			return false
-		}
-	}
-	return true
-}
+var validNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+var validEnvVarPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-func isValidEnvVar(envVar string) bool {
-	if envVar == "" {
-		return false
-	}
-	for i, c := range envVar {
-		if i == 0 && c >= '0' && c <= '9' {
-			return false
-		}
-		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_') {
-			return false
-		}
-	}
-	return true
-}
-
-func runAdd(cmd *cobra.Command, args []string) error {
+func runAdd(c *cobra.Command, args []string) error {
 	name := strings.ToLower(args[0])
 
-	if !isValidName(name) {
+	if !validNamePattern.MatchString(name) {
 		return fmt.Errorf("invalid key name %q: use only lowercase letters, numbers, hyphens, and underscores", name)
 	}
 
 	// Determine env var name
-	envVar := addEnvFlag
+	envVar, _ := c.Flags().GetString("env")
 	entry := registry.Lookup(name)
 	if envVar == "" {
 		if entry == nil {
@@ -76,7 +49,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		envVar = entry.EnvVar
 	}
 
-	if !isValidEnvVar(envVar) {
+	if !validEnvVarPattern.MatchString(envVar) {
 		return fmt.Errorf("invalid environment variable name %q: use only letters, numbers, and underscores (cannot start with a number)", envVar)
 	}
 
@@ -90,21 +63,19 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Read key interactively
-	fmt.Fprint(os.Stderr, "  API Key: ")
-	password, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Fprintln(os.Stderr)
+	value, err := readPassword("  API Key: ")
 	if err != nil {
-		return fmt.Errorf("failed to read key: %w", err)
+		return err
 	}
 
-	value := strings.TrimSpace(string(password))
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return fmt.Errorf("key cannot be empty")
 	}
 
 	// Validate format for known keys
 	if entry != nil && !registry.ValidateFormat(entry, value) {
-		fmt.Fprintf(os.Stderr, "  Warning: key does not match expected format for %q (expected prefix: %s)\n",
+		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Warning: key does not match expected format for %q (expected prefix: %s)\n",
 			name, strings.Join(entry.Prefixes, " or "))
 	}
 
@@ -121,6 +92,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "  Saved to OS keychain (%s)\n", envVar)
+	_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Saved to OS keychain (%s)\n", envVar)
 	return nil
 }

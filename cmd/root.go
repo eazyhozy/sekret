@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // store is the keychain store used by all commands.
@@ -12,6 +16,39 @@ var store keychain.Store = keychain.NewOSStore()
 // SetStore overrides the keychain store (for testing).
 func SetStore(s keychain.Store) {
 	store = s
+}
+
+// readPassword reads a secret from the terminal with the given prompt.
+// Override with SetReadPassword() for testing.
+var readPassword = func(prompt string) (string, error) {
+	fmt.Fprint(os.Stderr, prompt)
+	password, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		return "", fmt.Errorf("failed to read input: %w", err)
+	}
+	return string(password), nil
+}
+
+// SetReadPassword overrides the password reader (for testing).
+func SetReadPassword(fn func(string) (string, error)) {
+	readPassword = fn
+}
+
+// readConfirm reads a y/N confirmation from the user.
+// Override with SetReadConfirm() for testing.
+var readConfirm = func(prompt string) (bool, error) {
+	fmt.Fprint(os.Stderr, prompt)
+	var answer string
+	if _, err := fmt.Fscanln(os.Stdin, &answer); err != nil {
+		return false, fmt.Errorf("failed to read confirmation: %w", err)
+	}
+	return answer == "y" || answer == "yes", nil
+}
+
+// SetReadConfirm overrides the confirm reader (for testing).
+func SetReadConfirm(fn func(string) (bool, error)) {
+	readConfirm = fn
 }
 
 var rootCmd = &cobra.Command{
