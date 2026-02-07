@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
-	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +49,6 @@ func runRemove(_ *cobra.Command, args []string) error {
 	}
 
 	// Delete from keychain
-	store := keychain.NewOSStore()
 	if err := store.Delete(name); err != nil {
 		return err
 	}

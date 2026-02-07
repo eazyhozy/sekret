@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
-	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +45,6 @@ func runEnv(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	store := keychain.NewOSStore()
 	for _, k := range cfg.Keys {
 		val, err := store.Get(k.Name)
 		if err != nil {

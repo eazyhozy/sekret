@@ -6,7 +6,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/eazyhozy/sekret/internal/config"
-	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +57,6 @@ func runList(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	store := keychain.NewOSStore()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	_, _ = fmt.Fprintln(w, "Name\tEnv Variable\tKey Preview\tAdded")
 	_, _ = fmt.Fprintln(w, "----\t------------\t-----------\t-----")

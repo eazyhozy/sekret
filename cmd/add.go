@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
-	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/eazyhozy/sekret/internal/registry"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -33,8 +32,39 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 }
 
+func isValidName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, c := range name {
+		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+func isValidEnvVar(envVar string) bool {
+	if envVar == "" {
+		return false
+	}
+	for i, c := range envVar {
+		if i == 0 && c >= '0' && c <= '9' {
+			return false
+		}
+		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
 func runAdd(cmd *cobra.Command, args []string) error {
 	name := strings.ToLower(args[0])
+
+	if !isValidName(name) {
+		return fmt.Errorf("invalid key name %q: use only lowercase letters, numbers, hyphens, and underscores", name)
+	}
 
 	// Determine env var name
 	envVar := addEnvFlag
@@ -44,6 +74,10 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("unknown key %q: use --env to specify the environment variable name", name)
 		}
 		envVar = entry.EnvVar
+	}
+
+	if !isValidEnvVar(envVar) {
+		return fmt.Errorf("invalid environment variable name %q: use only letters, numbers, and underscores (cannot start with a number)", envVar)
 	}
 
 	// Check if already registered
@@ -75,7 +109,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save to keychain
-	store := keychain.NewOSStore()
 	if err := store.Set(name, value); err != nil {
 		return err
 	}

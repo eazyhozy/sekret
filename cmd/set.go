@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
-	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/eazyhozy/sekret/internal/registry"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -37,7 +36,6 @@ func runSet(_ *cobra.Command, args []string) error {
 	}
 
 	// Show current masked value
-	store := keychain.NewOSStore()
 	if current, err := store.Get(name); err == nil {
 		fmt.Fprintf(os.Stderr, "  Current: %s\n", maskKey(current))
 	}
