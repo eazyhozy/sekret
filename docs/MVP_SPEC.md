@@ -300,15 +300,15 @@ Go's fast startup time + local OS keychain access should make this easily achiev
 
 ### MVP (v0.1) — Included
 
-- [x] `sekret add <name>` — Interactive key registration
-- [x] `sekret list` — List registered keys (masked)
-- [x] `sekret set <name>` — Update key
-- [x] `sekret remove <name>` — Delete key
-- [x] `sekret env` — Export environment variables
-- [x] Built-in key registry (openai, anthropic, gemini, github, groq)
-- [x] Custom key registration (`--env` flag)
-- [x] macOS + Linux Desktop support
-- [x] Homebrew distribution
+- `sekret add <name>` — Interactive key registration
+- `sekret list` — List registered keys (masked)
+- `sekret set <name>` — Update key
+- `sekret remove <name>` — Delete key
+- `sekret env` — Export environment variables
+- Built-in key registry (openai, anthropic, gemini, github, groq)
+- Custom key registration (`--env` flag)
+- macOS + Linux Desktop support
+- Homebrew distribution
 
 ### v0.2 — Future
 
