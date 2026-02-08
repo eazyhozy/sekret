@@ -7,6 +7,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/eazyhozy/sekret/internal/config"
+	"github.com/eazyhozy/sekret/internal/scanner"
 	"github.com/spf13/cobra"
 )
 
@@ -19,31 +20,6 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-}
-
-func maskKey(value string) string {
-	if len(value) <= 4 {
-		return "****"
-	}
-
-	// Find the prefix portion (up to the first meaningful character after known prefix patterns)
-	prefix := ""
-	prefixes := []string{"sk-proj-", "sk-ant-", "github_pat_", "sk-", "ghp_", "gsk_", "AIza"}
-	for _, p := range prefixes {
-		if len(value) >= len(p) && value[:len(p)] == p {
-			prefix = p
-			break
-		}
-	}
-
-	if prefix == "" && len(value) > 8 {
-		prefix = value[:4]
-	} else if prefix == "" {
-		prefix = value[:2]
-	}
-
-	suffix := value[len(value)-4:]
-	return prefix + "..." + suffix
 }
 
 func runList(_ *cobra.Command, _ []string) error {
@@ -64,7 +40,7 @@ func runList(_ *cobra.Command, _ []string) error {
 	for _, k := range cfg.Keys {
 		preview := "(unavailable)"
 		if val, err := store.Get(k.KeychainKey()); err == nil {
-			preview = maskKey(val)
+			preview = scanner.MaskValue(val)
 		}
 		added := humanize.Time(k.AddedAt)
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", k.EnvVar, preview, added)

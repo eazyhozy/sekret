@@ -6,6 +6,7 @@ import (
 
 	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/eazyhozy/sekret/internal/registry"
+	"github.com/eazyhozy/sekret/internal/scanner"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ func runSet(_ *cobra.Command, args []string) error {
 
 	// Show current masked value
 	if current, err := store.Get(keychainKey); err == nil {
-		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Current: %s\n", maskKey(current))
+		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Current: %s\n", scanner.MaskValue(current))
 	}
 
 	// Read new key interactively
