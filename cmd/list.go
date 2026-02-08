@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/dustin/go-humanize"
+	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -58,16 +58,16 @@ func runList(_ *cobra.Command, _ []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	_, _ = fmt.Fprintln(w, "Name\tEnv Variable\tKey Preview\tAdded")
-	_, _ = fmt.Fprintln(w, "----\t------------\t-----------\t-----")
+	_, _ = fmt.Fprintln(w, "Env Variable\tKey Preview\tAdded")
+	_, _ = fmt.Fprintln(w, "------------\t-----------\t-----")
 
 	for _, k := range cfg.Keys {
 		preview := "(unavailable)"
-		if val, err := store.Get(k.Name); err == nil {
+		if val, err := store.Get(k.KeychainKey()); err == nil {
 			preview = maskKey(val)
 		}
 		added := humanize.Time(k.AddedAt)
-		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", k.Name, k.EnvVar, preview, added)
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", k.EnvVar, preview, added)
 	}
 
 	return w.Flush()

@@ -17,11 +17,26 @@ var builtinEntries = []Entry{
 	{Name: "groq", EnvVar: "GROQ_API_KEY", Prefixes: []string{"gsk_"}},
 }
 
+// All returns all built-in registry entries.
+func All() []Entry {
+	return builtinEntries
+}
+
 // Lookup returns the registry entry for the given name, or nil if not found.
 func Lookup(name string) *Entry {
 	lower := strings.ToLower(name)
 	for i := range builtinEntries {
 		if builtinEntries[i].Name == lower {
+			return &builtinEntries[i]
+		}
+	}
+	return nil
+}
+
+// LookupByEnvVar returns the registry entry for the given env var, or nil if not found.
+func LookupByEnvVar(envVar string) *Entry {
+	for i := range builtinEntries {
+		if builtinEntries[i].EnvVar == envVar {
 			return &builtinEntries[i]
 		}
 	}

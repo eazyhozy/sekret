@@ -19,6 +19,15 @@ type KeyEntry struct {
 	AddedAt time.Time `json:"added_at"`
 }
 
+// KeychainKey returns the key used to store/retrieve the value in the OS keychain.
+// Legacy entries (with name) use name; new entries use env_var.
+func (e *KeyEntry) KeychainKey() string {
+	if e.Name != "" {
+		return e.Name
+	}
+	return e.EnvVar
+}
+
 // Config represents the sekret config file structure.
 type Config struct {
 	Version int        `json:"version"`
@@ -90,10 +99,11 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// AddKey adds a new key entry. Returns an error if the name or env var already exists.
+// AddKey adds a new key entry. Returns an error if the env var already exists.
+// The name field is only checked for duplicates when non-empty (legacy compat).
 func (c *Config) AddKey(name, envVar string) error {
 	for _, k := range c.Keys {
-		if k.Name == name {
+		if name != "" && k.Name != "" && k.Name == name {
 			return fmt.Errorf("key %q already exists", name)
 		}
 		if k.EnvVar == envVar {
@@ -108,15 +118,15 @@ func (c *Config) AddKey(name, envVar string) error {
 	return nil
 }
 
-// RemoveKey removes a key entry by name. Returns an error if not found.
-func (c *Config) RemoveKey(name string) error {
+// RemoveKey removes a key entry by env var. Returns an error if not found.
+func (c *Config) RemoveKey(envVar string) error {
 	for i, k := range c.Keys {
-		if k.Name == name {
+		if k.EnvVar == envVar {
 			c.Keys = append(c.Keys[:i], c.Keys[i+1:]...)
 			return nil
 		}
 	}
-	return fmt.Errorf("key %q not found", name)
+	return fmt.Errorf("key %q not found", envVar)
 }
 
 // FindKey returns the key entry for the given name, or nil if not found.

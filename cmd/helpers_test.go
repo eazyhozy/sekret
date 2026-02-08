@@ -23,9 +23,6 @@ func setup(t *testing.T) {
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "", fmt.Errorf("readPassword not configured for this test")
 	})
-	cmd.SetReadInput(func(_ string) (string, error) {
-		return "", fmt.Errorf("readInput not configured for this test")
-	})
 	cmd.SetReadConfirm(func(_ string) (bool, error) {
 		return false, fmt.Errorf("readConfirm not configured for this test")
 	})
@@ -33,13 +30,31 @@ func setup(t *testing.T) {
 		config.SetPath("")
 		cmd.SetStore(keychain.NewOSStore())
 		cmd.SetReadPassword(nil)
-		cmd.SetReadInput(nil)
 		cmd.SetReadConfirm(nil)
 		testStore = nil
 	})
 }
 
-func seedKey(t *testing.T, name, envVar, value string) {
+// seedKey creates a new-style key entry (no name, env var as keychain key).
+func seedKey(t *testing.T, envVar, value string) {
+	t.Helper()
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+	if err := cfg.AddKey("", envVar); err != nil {
+		t.Fatalf("failed to add key: %v", err)
+	}
+	if err := config.Save(cfg); err != nil {
+		t.Fatalf("failed to save config: %v", err)
+	}
+	if err := testStore.Set(envVar, value); err != nil {
+		t.Fatalf("failed to set key in store: %v", err)
+	}
+}
+
+// seedLegacyKey creates a legacy-style key entry (with name as keychain key).
+func seedLegacyKey(t *testing.T, name, envVar, value string) {
 	t.Helper()
 	cfg, err := config.Load()
 	if err != nil {

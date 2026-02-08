@@ -15,7 +15,7 @@ func TestList_Empty(t *testing.T) {
 
 func TestList_WithKeys(t *testing.T) {
 	setup(t)
-	seedKey(t, "openai", "OPENAI_API_KEY", "sk-abcdefghijklmnop")
+	seedKey(t, "OPENAI_API_KEY", "sk-abcdefghijklmnop")
 
 	output := captureStdout(t, func() {
 		if err := executeCmd(t, "list"); err != nil {
@@ -23,13 +23,33 @@ func TestList_WithKeys(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(output, "openai") {
-		t.Errorf("expected key name in output, got %q", output)
-	}
 	if !strings.Contains(output, "OPENAI_API_KEY") {
 		t.Errorf("expected env var in output, got %q", output)
 	}
 	if strings.Contains(output, "sk-abcdefghijklmnop") {
 		t.Error("full key should not appear in list output")
+	}
+}
+
+func TestList_NoNameColumn(t *testing.T) {
+	setup(t)
+	seedKey(t, "OPENAI_API_KEY", "sk-abcdefghijklmnop")
+
+	output := captureStdout(t, func() {
+		if err := executeCmd(t, "list"); err != nil {
+			t.Fatalf("list command failed: %v", err)
+		}
+	})
+
+	// Header should start with "Env Variable", not "Name"
+	lines := strings.Split(output, "\n")
+	if len(lines) < 1 {
+		t.Fatal("expected output lines")
+	}
+	if strings.HasPrefix(strings.TrimSpace(lines[0]), "Name") {
+		t.Error("list output should not have a Name column")
+	}
+	if !strings.HasPrefix(strings.TrimSpace(lines[0]), "Env Variable") {
+		t.Errorf("expected header to start with 'Env Variable', got %q", lines[0])
 	}
 }

@@ -1,14 +1,18 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 
+	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/eazyhozy/sekret/internal/keychain"
+	"github.com/eazyhozy/sekret/internal/registry"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
+
+var validEnvVarPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // store is the keychain store used by all commands.
 // Override with SetStore() for testing.
@@ -34,26 +38,6 @@ var readPassword = func(prompt string) (string, error) {
 // SetReadPassword overrides the password reader (for testing).
 func SetReadPassword(fn func(string) (string, error)) {
 	readPassword = fn
-}
-
-// readInput reads a line of visible text from the user.
-// Returns empty string if user presses Enter without typing.
-// Override with SetReadInput() for testing.
-var readInput = func(prompt string) (string, error) {
-	fmt.Fprint(os.Stderr, prompt)
-	scanner := bufio.NewScanner(os.Stdin)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return "", fmt.Errorf("failed to read input: %w", err)
-		}
-		return "", fmt.Errorf("failed to read input: EOF")
-	}
-	return scanner.Text(), nil
-}
-
-// SetReadInput overrides the input reader (for testing).
-func SetReadInput(fn func(string) (string, error)) {
-	readInput = fn
 }
 
 // readConfirm reads a y/N confirmation from the user.
@@ -90,4 +74,46 @@ func RootCmd() *cobra.Command {
 // Execute runs the root command.
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+// resolveEnvVar resolves a CLI argument to an env var name.
+// Built-in shorthand names (openai, anthropic, etc.) are expanded to their env var.
+// Otherwise the argument is validated as an env var name.
+// Returns the env var and a registry entry (if matched), or an error.
+func resolveEnvVar(arg string) (string, *registry.Entry, error) {
+	// 1. Check built-in shorthand first
+	if entry := registry.Lookup(arg); entry != nil {
+		return entry.EnvVar, entry, nil
+	}
+
+	// 2. Validate as env var name
+	if !validEnvVarPattern.MatchString(arg) {
+		return "", nil, fmt.Errorf("invalid environment variable name %q: use only letters, numbers, and underscores (cannot start with a number)", arg)
+	}
+
+	entry := registry.LookupByEnvVar(arg)
+	return arg, entry, nil
+}
+
+// resolveKey finds an existing key entry from a CLI argument.
+// Tries: env var match → registry shorthand → legacy name match.
+func resolveKey(cfg *config.Config, arg string) (*config.KeyEntry, error) {
+	// 1. Direct env var match
+	if entry := cfg.FindKeyByEnvVar(arg); entry != nil {
+		return entry, nil
+	}
+
+	// 2. Registry shorthand → expand to env var
+	if regEntry := registry.Lookup(arg); regEntry != nil {
+		if entry := cfg.FindKeyByEnvVar(regEntry.EnvVar); entry != nil {
+			return entry, nil
+		}
+	}
+
+	// 3. Legacy name match (backward compat for v1 config entries)
+	if entry := cfg.FindKey(arg); entry != nil {
+		return entry, nil
+	}
+
+	return nil, fmt.Errorf("key %q is not registered", arg)
 }

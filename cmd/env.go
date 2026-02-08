@@ -46,9 +46,9 @@ func runEnv(_ *cobra.Command, _ []string) error {
 	}
 
 	for _, k := range cfg.Keys {
-		val, err := store.Get(k.Name)
+		val, err := store.Get(k.KeychainKey())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "sekret: warning: could not read key %q: %v\n", k.Name, err)
+			fmt.Fprintf(os.Stderr, "sekret: warning: could not read key %q: %v\n", k.EnvVar, err)
 			continue
 		}
 		fmt.Printf("export %s=\"%s\"\n", k.EnvVar, shellEscape(val))
