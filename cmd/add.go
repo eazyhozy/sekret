@@ -61,6 +61,9 @@ func runAdd(c *cobra.Command, args []string) error {
 	if cfg.FindKey(name) != nil {
 		return fmt.Errorf("key %q is already registered (use 'sekret set %s' to update)", name, name)
 	}
+	if existing := cfg.FindKeyByEnvVar(envVar); existing != nil {
+		return fmt.Errorf("environment variable %q is already used by key %q", envVar, existing.Name)
+	}
 
 	// Read key interactively
 	value, err := readPassword("  API Key: ")

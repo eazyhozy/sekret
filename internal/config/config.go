@@ -90,11 +90,14 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// AddKey adds a new key entry. Returns an error if the name already exists.
+// AddKey adds a new key entry. Returns an error if the name or env var already exists.
 func (c *Config) AddKey(name, envVar string) error {
 	for _, k := range c.Keys {
 		if k.Name == name {
 			return fmt.Errorf("key %q already exists", name)
+		}
+		if k.EnvVar == envVar {
+			return fmt.Errorf("environment variable %q is already used by key %q", envVar, k.Name)
 		}
 	}
 	c.Keys = append(c.Keys, KeyEntry{
@@ -120,6 +123,16 @@ func (c *Config) RemoveKey(name string) error {
 func (c *Config) FindKey(name string) *KeyEntry {
 	for i := range c.Keys {
 		if c.Keys[i].Name == name {
+			return &c.Keys[i]
+		}
+	}
+	return nil
+}
+
+// FindKeyByEnvVar returns the key entry for the given env var, or nil if not found.
+func (c *Config) FindKeyByEnvVar(envVar string) *KeyEntry {
+	for i := range c.Keys {
+		if c.Keys[i].EnvVar == envVar {
 			return &c.Keys[i]
 		}
 	}
