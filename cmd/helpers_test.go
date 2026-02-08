@@ -10,6 +10,7 @@ import (
 	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/eazyhozy/sekret/internal/keychain"
 	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/require"
 )
 
 var testStore *keychain.MockStore
@@ -39,45 +40,27 @@ func setup(t *testing.T) {
 func seedKey(t *testing.T, envVar, value string) {
 	t.Helper()
 	cfg, err := config.Load()
-	if err != nil {
-		t.Fatalf("failed to load config: %v", err)
-	}
-	if err := cfg.AddKey("", envVar); err != nil {
-		t.Fatalf("failed to add key: %v", err)
-	}
-	if err := config.Save(cfg); err != nil {
-		t.Fatalf("failed to save config: %v", err)
-	}
-	if err := testStore.Set(envVar, value); err != nil {
-		t.Fatalf("failed to set key in store: %v", err)
-	}
+	require.NoError(t, err, "failed to load config")
+	require.NoError(t, cfg.AddKey("", envVar), "failed to add key")
+	require.NoError(t, config.Save(cfg), "failed to save config")
+	require.NoError(t, testStore.Set(envVar, value), "failed to set key in store")
 }
 
 // seedLegacyKey creates a legacy-style key entry (with name as keychain key).
 func seedLegacyKey(t *testing.T, name, envVar, value string) {
 	t.Helper()
 	cfg, err := config.Load()
-	if err != nil {
-		t.Fatalf("failed to load config: %v", err)
-	}
-	if err := cfg.AddKey(name, envVar); err != nil {
-		t.Fatalf("failed to add key: %v", err)
-	}
-	if err := config.Save(cfg); err != nil {
-		t.Fatalf("failed to save config: %v", err)
-	}
-	if err := testStore.Set(name, value); err != nil {
-		t.Fatalf("failed to set key in store: %v", err)
-	}
+	require.NoError(t, err, "failed to load config")
+	require.NoError(t, cfg.AddKey(name, envVar), "failed to add key")
+	require.NoError(t, config.Save(cfg), "failed to save config")
+	require.NoError(t, testStore.Set(name, value), "failed to set key in store")
 }
 
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	old := os.Stdout
 	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("failed to create pipe: %v", err)
-	}
+	require.NoError(t, err, "failed to create pipe")
 	os.Stdout = w
 
 	fn()
@@ -86,9 +69,8 @@ func captureStdout(t *testing.T, fn func()) string {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(r); err != nil {
-		t.Fatalf("failed to read pipe: %v", err)
-	}
+	_, err = buf.ReadFrom(r)
+	require.NoError(t, err, "failed to read pipe")
 	return buf.String()
 }
 

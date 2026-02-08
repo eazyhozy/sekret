@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/eazyhozy/sekret/internal/registry"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLookup_BuiltinKeys(t *testing.T) {
@@ -24,16 +26,10 @@ func TestLookup_BuiltinKeys(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			entry := registry.Lookup(tt.name)
 			if tt.wantFound {
-				if entry == nil {
-					t.Fatalf("expected entry for %q, got nil", tt.name)
-				}
-				if entry.EnvVar != tt.wantEnv {
-					t.Errorf("got env var %q, want %q", entry.EnvVar, tt.wantEnv)
-				}
+				require.NotNil(t, entry, "expected entry for %q", tt.name)
+				assert.Equal(t, tt.wantEnv, entry.EnvVar)
 			} else {
-				if entry != nil {
-					t.Errorf("expected nil for %q, got %+v", tt.name, entry)
-				}
+				assert.Nil(t, entry, "expected nil for %q", tt.name)
 			}
 		})
 	}
@@ -41,12 +37,8 @@ func TestLookup_BuiltinKeys(t *testing.T) {
 
 func TestLookup_CaseInsensitive(t *testing.T) {
 	entry := registry.Lookup("OpenAI")
-	if entry == nil {
-		t.Fatal("expected entry for 'OpenAI', got nil")
-	}
-	if entry.EnvVar != "OPENAI_API_KEY" {
-		t.Errorf("got %q, want %q", entry.EnvVar, "OPENAI_API_KEY")
-	}
+	require.NotNil(t, entry)
+	assert.Equal(t, "OPENAI_API_KEY", entry.EnvVar)
 }
 
 func TestValidateFormat(t *testing.T) {
@@ -65,18 +57,13 @@ func TestValidateFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := registry.ValidateFormat(openai, tt.value)
-			if got != tt.want {
-				t.Errorf("ValidateFormat(%q) = %v, want %v", tt.value, got, tt.want)
-			}
+			assert.Equal(t, tt.want, registry.ValidateFormat(openai, tt.value))
 		})
 	}
 }
 
 func TestValidateFormat_NilEntry(t *testing.T) {
-	if !registry.ValidateFormat(nil, "anything") {
-		t.Error("expected true for nil entry")
-	}
+	assert.True(t, registry.ValidateFormat(nil, "anything"))
 }
 
 func TestLookupByEnvVar(t *testing.T) {
@@ -97,16 +84,10 @@ func TestLookupByEnvVar(t *testing.T) {
 		t.Run(tt.envVar, func(t *testing.T) {
 			entry := registry.LookupByEnvVar(tt.envVar)
 			if tt.wantFound {
-				if entry == nil {
-					t.Fatalf("expected entry for %q, got nil", tt.envVar)
-				}
-				if entry.Name != tt.wantName {
-					t.Errorf("got name %q, want %q", entry.Name, tt.wantName)
-				}
+				require.NotNil(t, entry, "expected entry for %q", tt.envVar)
+				assert.Equal(t, tt.wantName, entry.Name)
 			} else {
-				if entry != nil {
-					t.Errorf("expected nil for %q, got %+v", tt.envVar, entry)
-				}
+				assert.Nil(t, entry, "expected nil for %q", tt.envVar)
 			}
 		})
 	}

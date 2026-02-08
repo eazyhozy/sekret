@@ -3,10 +3,11 @@ package config_test
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/eazyhozy/sekret/internal/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTestDir(t *testing.T) string {
@@ -21,128 +22,77 @@ func TestLoad_NoFile(t *testing.T) {
 	setupTestDir(t)
 
 	cfg, err := config.Load()
-	if err != nil {
-		t.Fatalf("Load failed: %v", err)
-	}
-	if cfg.Version != 1 {
-		t.Errorf("got version %d, want 1", cfg.Version)
-	}
-	if len(cfg.Keys) != 0 {
-		t.Errorf("got %d keys, want 0", len(cfg.Keys))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 1, cfg.Version)
+	assert.Empty(t, cfg.Keys)
 }
 
 func TestSaveAndLoad(t *testing.T) {
 	setupTestDir(t)
 
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("AddKey failed: %v", err)
-	}
-
-	if err := config.Save(cfg); err != nil {
-		t.Fatalf("Save failed: %v", err)
-	}
+	require.NoError(t, cfg.AddKey("openai", "OPENAI_API_KEY"))
+	require.NoError(t, config.Save(cfg))
 
 	loaded, err := config.Load()
-	if err != nil {
-		t.Fatalf("Load failed: %v", err)
-	}
-	if len(loaded.Keys) != 1 {
-		t.Fatalf("got %d keys, want 1", len(loaded.Keys))
-	}
-	if loaded.Keys[0].Name != "openai" {
-		t.Errorf("got name %q, want %q", loaded.Keys[0].Name, "openai")
-	}
-	if loaded.Keys[0].EnvVar != "OPENAI_API_KEY" {
-		t.Errorf("got env var %q, want %q", loaded.Keys[0].EnvVar, "OPENAI_API_KEY")
-	}
+	require.NoError(t, err)
+	require.Len(t, loaded.Keys, 1)
+	assert.Equal(t, "openai", loaded.Keys[0].Name)
+	assert.Equal(t, "OPENAI_API_KEY", loaded.Keys[0].EnvVar)
 }
 
 func TestAddKey_Duplicate(t *testing.T) {
 	setupTestDir(t)
 
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("first AddKey failed: %v", err)
-	}
+	require.NoError(t, cfg.AddKey("openai", "OPENAI_API_KEY"))
 
 	err := cfg.AddKey("openai", "OPENAI_API_KEY")
-	if err == nil {
-		t.Fatal("expected error for duplicate key, got nil")
-	}
+	assert.Error(t, err)
 }
 
 func TestAddKey_DuplicateEnvVar(t *testing.T) {
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("first AddKey failed: %v", err)
-	}
+	require.NoError(t, cfg.AddKey("openai", "OPENAI_API_KEY"))
 
 	err := cfg.AddKey("my-key", "OPENAI_API_KEY")
-	if err == nil {
-		t.Fatal("expected error for duplicate env var, got nil")
-	}
-	if !strings.Contains(err.Error(), "already used by") {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already used by")
 }
 
 func TestRemoveKey_ByEnvVar(t *testing.T) {
 	setupTestDir(t)
 
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("AddKey failed: %v", err)
-	}
-
-	if err := cfg.RemoveKey("OPENAI_API_KEY"); err != nil {
-		t.Fatalf("RemoveKey failed: %v", err)
-	}
-	if len(cfg.Keys) != 0 {
-		t.Errorf("got %d keys, want 0", len(cfg.Keys))
-	}
+	require.NoError(t, cfg.AddKey("openai", "OPENAI_API_KEY"))
+	require.NoError(t, cfg.RemoveKey("OPENAI_API_KEY"))
+	assert.Empty(t, cfg.Keys)
 }
 
 func TestRemoveKey_NotFound(t *testing.T) {
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
 	err := cfg.RemoveKey("NONEXISTENT")
-	if err == nil {
-		t.Fatal("expected error for removing nonexistent key, got nil")
-	}
+	assert.Error(t, err)
 }
 
 func TestKeychainKey_WithName(t *testing.T) {
 	entry := &config.KeyEntry{Name: "openai", EnvVar: "OPENAI_API_KEY"}
-	if got := entry.KeychainKey(); got != "openai" {
-		t.Errorf("KeychainKey() = %q, want %q", got, "openai")
-	}
+	assert.Equal(t, "openai", entry.KeychainKey())
 }
 
 func TestKeychainKey_WithoutName(t *testing.T) {
 	entry := &config.KeyEntry{Name: "", EnvVar: "MY_SERVICE_KEY"}
-	if got := entry.KeychainKey(); got != "MY_SERVICE_KEY" {
-		t.Errorf("KeychainKey() = %q, want %q", got, "MY_SERVICE_KEY")
-	}
+	assert.Equal(t, "MY_SERVICE_KEY", entry.KeychainKey())
 }
 
 func TestFindKey(t *testing.T) {
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("AddKey failed: %v", err)
-	}
+	require.NoError(t, cfg.AddKey("openai", "OPENAI_API_KEY"))
 
 	entry := cfg.FindKey("openai")
-	if entry == nil {
-		t.Fatal("expected entry, got nil")
-	}
-	if entry.EnvVar != "OPENAI_API_KEY" {
-		t.Errorf("got %q, want %q", entry.EnvVar, "OPENAI_API_KEY")
-	}
-
-	if cfg.FindKey("nonexistent") != nil {
-		t.Error("expected nil for nonexistent key")
-	}
+	require.NotNil(t, entry)
+	assert.Equal(t, "OPENAI_API_KEY", entry.EnvVar)
+	assert.Nil(t, cfg.FindKey("nonexistent"))
 }
 
 func TestSave_CreatesDirectory(t *testing.T) {
@@ -152,11 +102,8 @@ func TestSave_CreatesDirectory(t *testing.T) {
 	t.Cleanup(func() { config.SetPath("") })
 
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	if err := config.Save(cfg); err != nil {
-		t.Fatalf("Save failed: %v", err)
-	}
+	require.NoError(t, config.Save(cfg))
 
-	if _, err := os.Stat(filepath.Join(nested, "config.json")); err != nil {
-		t.Fatalf("config file not created: %v", err)
-	}
+	_, err := os.Stat(filepath.Join(nested, "config.json"))
+	assert.NoError(t, err)
 }
