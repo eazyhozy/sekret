@@ -17,9 +17,13 @@ go install github.com/eazyhozy/sekret@latest
 ## Quick Start
 
 ```bash
-# Register your keys
-sekret add openai
-sekret add anthropic
+# Register your keys (env var name directly)
+sekret add OPENAI_API_KEY
+sekret add ANTHROPIC_API_KEY
+
+# Or use built-in shorthands
+sekret add openai       # → OPENAI_API_KEY
+sekret add anthropic    # → ANTHROPIC_API_KEY
 
 # Add to .zshrc (replace existing export statements)
 echo 'eval "$(sekret env)"' >> ~/.zshrc
@@ -32,34 +36,34 @@ source ~/.zshrc
 
 | Command | Description |
 |---------|-------------|
-| `sekret add <name>` | Register a new API key (interactive input) |
+| `sekret add <ENV_VAR>` | Register a new API key (interactive input) |
 | `sekret list` | List registered keys (values are masked) |
-| `sekret set <name>` | Update an existing key |
-| `sekret remove <name>` | Remove a key (with confirmation) |
+| `sekret set <ENV_VAR>` | Update an existing key |
+| `sekret remove <ENV_VAR>` | Remove a key (with confirmation) |
 | `sekret env` | Output all keys as `export` statements |
 
-## Built-in Key Registry
+## Built-in Shorthands
 
-Keys are automatically mapped to environment variables:
+For common services, you can use shorthand names instead of full env var names:
 
-| Name | Env Variable | Key Prefix |
-|------|-------------|------------|
+| Shorthand | Env Variable | Key Prefix |
+|-----------|-------------|------------|
 | `openai` | `OPENAI_API_KEY` | `sk-` / `sk-proj-` |
 | `anthropic` | `ANTHROPIC_API_KEY` | `sk-ant-` |
 | `gemini` | `GEMINI_API_KEY` | `AIza` |
 | `github` | `GITHUB_TOKEN` | `ghp_` / `github_pat_` |
 | `groq` | `GROQ_API_KEY` | `gsk_` |
 
-For custom keys, specify the env var name:
+For any other key, use the env var name directly:
 
 ```bash
-sekret add my-service --env MY_SERVICE_KEY
+sekret add MY_SERVICE_KEY
 ```
 
 ## How It Works
 
 - **Key values** are stored in the OS keychain (OS-level encryption)
-- **Metadata** (name-to-env-var mapping) is stored in `~/.config/sekret/config.json`
+- **Metadata** (registered env var list) is stored in `~/.config/sekret/config.json`
 - Key values are **never written to any file**
 - Key input is always interactive (never accepted as CLI arguments, protecting shell history)
 

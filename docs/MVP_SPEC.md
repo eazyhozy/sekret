@@ -37,13 +37,17 @@ $ brew install sekret        # macOS
 $ go install github.com/xxx/sekret@latest  # or Go install
 
 # Register existing keys
-$ sekret add openai
+$ sekret add OPENAI_API_KEY
   API Key: ••••••••••••••••
-  ✓ Saved to OS keychain (OPENAI_API_KEY)
+  Saved to OS keychain (OPENAI_API_KEY)
 
-$ sekret add anthropic
+$ sekret add ANTHROPIC_API_KEY
   API Key: ••••••••••••••••
-  ✓ Saved to OS keychain (ANTHROPIC_API_KEY)
+  Saved to OS keychain (ANTHROPIC_API_KEY)
+
+# Built-in shorthands also work
+$ sekret add openai       # → OPENAI_API_KEY
+$ sekret add anthropic    # → ANTHROPIC_API_KEY
 
 # Replace in .zshrc (remove existing export statements first)
 $ echo 'eval "$(sekret env)"' >> ~/.zshrc
@@ -64,44 +68,44 @@ $ curl -H "Authorization: Bearer $OPENAI_API_KEY" ...  # just works
 ### Key Management (occasional)
 
 ```bash
-$ sekret list                   # list registered keys
-$ sekret add gemini             # add a new key
-$ sekret set openai             # update an existing key
-$ sekret remove old-service     # delete a key
+$ sekret list                    # list registered keys
+$ sekret add GEMINI_API_KEY      # add a new key
+$ sekret set OPENAI_API_KEY      # update an existing key
+$ sekret remove OLD_SERVICE_KEY  # delete a key
 ```
 
 ---
 
 ## 3. MVP Commands in Detail
 
-### `sekret add <name>`
+### `sekret add <ENV_VAR>`
 
 Register a new API key.
 
 ```
-$ sekret add openai
+$ sekret add OPENAI_API_KEY
   API Key: ••••••••••••••••
-  ✓ Saved to OS keychain
-  → env var: OPENAI_API_KEY
+  Saved to OS keychain (OPENAI_API_KEY)
 ```
 
 **Behavior:**
-1. Prompt for key input interactively (masked input)
-2. Auto-map env var name from the key name (see built-in registry below)
+1. Accept env var name as argument (e.g. `OPENAI_API_KEY`)
+2. Prompt for key input interactively (masked input)
 3. Store in OS keychain
 
-**Built-in Key Registry (MVP):**
+**Built-in Shorthands:**
 
-| name | Env Variable | Key Format Pattern |
-|------|-------------|-------------------|
+For common services, shorthand names are accepted and expanded with a confirmation prompt:
+
+| Shorthand | Env Variable | Key Format Pattern |
+|-----------|-------------|-------------------|
 | `openai` | `OPENAI_API_KEY` | `sk-` or `sk-proj-` |
 | `anthropic` | `ANTHROPIC_API_KEY` | `sk-ant-` |
 | `gemini` | `GEMINI_API_KEY` | `AIza` |
 | `github` | `GITHUB_TOKEN` | `ghp_` / `github_pat_` |
 | `groq` | `GROQ_API_KEY` | `gsk_` |
 
-- Names not in the registry can be freely registered: `sekret add my-service`
-- In that case, specify the env var name directly: `sekret add my-service --env MY_SERVICE_KEY`
+- Any valid env var name can be registered directly: `sekret add MY_SERVICE_KEY`
 - Simple format validation for known keys (prevents paste errors)
 
 ### `sekret list`
@@ -111,36 +115,35 @@ List all registered keys.
 ```
 $ sekret list
 
-  Name          Env Variable         Key Preview    Added
-  ─────────────────────────────────────────────────────────
-  openai        OPENAI_API_KEY       sk-...Qx7f     3 months ago
-  anthropic     ANTHROPIC_API_KEY    sk-ant-...w2   1 month ago
-  gemini        GEMINI_API_KEY       AIza...8kP     2 weeks ago
+  Env Variable         Key Preview    Added
+  ─────────────────────────────────────────────
+  OPENAI_API_KEY       sk-...Qx7f     3 months ago
+  ANTHROPIC_API_KEY    sk-ant-...w2   1 month ago
+  GEMINI_API_KEY       AIza...8kP     2 weeks ago
 ```
 
 **Behavior:**
 - Key values show only the prefix + last 4 characters (never expose the full key)
-- Use `--reveal` flag to view the full key (with a warning message)
 
-### `sekret set <name>`
+### `sekret set <ENV_VAR>`
 
 Update an existing key.
 
 ```
-$ sekret set openai
+$ sekret set OPENAI_API_KEY
   Current: sk-...Qx7f
   New API Key: ••••••••••••••••
-  ✓ Updated
+  Updated
 ```
 
-### `sekret remove <name>`
+### `sekret remove <ENV_VAR>`
 
 Delete a key.
 
 ```
-$ sekret remove old-service
-  Remove 'old-service' (OLD_SERVICE_KEY)? [y/N]: y
-  ✓ Removed
+$ sekret remove OLD_SERVICE_KEY
+  Remove 'OLD_SERVICE_KEY'? [y/N]: y
+  Removed
 ```
 
 ### `sekret env`
@@ -181,28 +184,23 @@ $ sekret run --only openai,anthropic -- python script.py
 ### Storage
 
 ```
-┌──────────────────────────────────┐
-│        OS Keychain               │
-│  ┌────────────────────────────┐  │
-│  │ service: "sekret"          │  │
-│  │ account: "openai"          │  │
-│  │ password: "sk-xxx..."      │  │
-│  └────────────────────────────┘  │
-│  ┌────────────────────────────┐  │
-│  │ service: "sekret"          │  │
-│  │ account: "anthropic"       │  │
-│  │ password: "sk-ant-xxx..."  │  │
-│  └────────────────────────────┘  │
-│  ┌────────────────────────────┐  │
-│  │ service: "sekret"          │  │
-│  │ account: "_registry"       │  │
-│  │ password: (JSON metadata)  │  │
-│  └────────────────────────────┘  │
-└──────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│        OS Keychain                       │
+│  ┌────────────────────────────────────┐  │
+│  │ service: "sekret"                  │  │
+│  │ account: "OPENAI_API_KEY"          │  │
+│  │ password: "sk-xxx..."              │  │
+│  └────────────────────────────────────┘  │
+│  ┌────────────────────────────────────┐  │
+│  │ service: "sekret"                  │  │
+│  │ account: "ANTHROPIC_API_KEY"       │  │
+│  │ password: "sk-ant-xxx..."          │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
 ```
 
 - **Key values**: Stored in OS keychain (OS-level encryption)
-- **Metadata**: (name-to-env-var mapping, timestamps, etc.) stored in a separate keychain entry or local config file (`~/.config/sekret/config.json`)
+- **Metadata**: (registered env var list, timestamps) stored in `~/.config/sekret/config.json`
   - Metadata never contains key values
 - Key values are never written to plaintext files
 
@@ -254,12 +252,12 @@ $ sekret run --only openai,anthropic -- python script.py
   "version": 1,
   "keys": [
     {
-      "name": "openai",
+      "name": "",
       "env_var": "OPENAI_API_KEY",
       "added_at": "2025-02-01T09:00:00Z"
     },
     {
-      "name": "anthropic",
+      "name": "",
       "env_var": "ANTHROPIC_API_KEY",
       "added_at": "2025-02-05T14:30:00Z"
     }
@@ -268,7 +266,7 @@ $ sekret run --only openai,anthropic -- python script.py
 ```
 
 - Key values are never stored here
-- Only name-to-env-var mapping + metadata
+- The `name` field exists for backward compatibility with legacy entries; new entries have it empty
 
 ---
 
@@ -300,13 +298,12 @@ Go's fast startup time + local OS keychain access should make this easily achiev
 
 ### MVP (v0.1) — Included
 
-- `sekret add <name>` — Interactive key registration
+- `sekret add <ENV_VAR>` — Interactive key registration
 - `sekret list` — List registered keys (masked)
-- `sekret set <name>` — Update key
-- `sekret remove <name>` — Delete key
+- `sekret set <ENV_VAR>` — Update key
+- `sekret remove <ENV_VAR>` — Delete key
 - `sekret env` — Export environment variables
-- Built-in key registry (openai, anthropic, gemini, github, groq)
-- Custom key registration (`--env` flag)
+- Built-in shorthands (openai, anthropic, gemini, github, groq)
 - macOS + Linux Desktop support
 - Homebrew distribution
 
