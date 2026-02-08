@@ -10,6 +10,9 @@ import (
 
 func TestAdd_BuiltinKey(t *testing.T) {
 	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "", nil // accept default env var
+	})
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "sk-test-key-12345678", nil
 	})
@@ -36,6 +39,29 @@ func TestAdd_BuiltinKey(t *testing.T) {
 	}
 }
 
+func TestAdd_BuiltinKeyCustomEnv(t *testing.T) {
+	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "MY_OPENAI_KEY", nil // override default
+	})
+	cmd.SetReadPassword(func(_ string) (string, error) {
+		return "sk-test-key-12345678", nil
+	})
+
+	if err := executeCmd(t, "add", "openai"); err != nil {
+		t.Fatalf("add failed: %v", err)
+	}
+
+	cfg, _ := config.Load()
+	entry := cfg.FindKey("openai")
+	if entry == nil {
+		t.Fatal("key not found in config")
+	}
+	if entry.EnvVar != "MY_OPENAI_KEY" {
+		t.Errorf("got env var %q, want %q", entry.EnvVar, "MY_OPENAI_KEY")
+	}
+}
+
 func TestAdd_CustomKey(t *testing.T) {
 	setup(t)
 	cmd.SetReadPassword(func(_ string) (string, error) {
@@ -56,6 +82,44 @@ func TestAdd_CustomKey(t *testing.T) {
 	}
 }
 
+func TestAdd_UnknownKeyInteractive(t *testing.T) {
+	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "CUSTOM_SERVICE_KEY", nil
+	})
+	cmd.SetReadPassword(func(_ string) (string, error) {
+		return "my-secret-value", nil
+	})
+
+	if err := executeCmd(t, "add", "custom-service"); err != nil {
+		t.Fatalf("add failed: %v", err)
+	}
+
+	cfg, _ := config.Load()
+	entry := cfg.FindKey("custom-service")
+	if entry == nil {
+		t.Fatal("key not found in config")
+	}
+	if entry.EnvVar != "CUSTOM_SERVICE_KEY" {
+		t.Errorf("got env var %q, want %q", entry.EnvVar, "CUSTOM_SERVICE_KEY")
+	}
+}
+
+func TestAdd_UnknownKeyEmptyEnvVar(t *testing.T) {
+	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "", nil // empty input for unknown key
+	})
+
+	err := executeCmd(t, "add", "unknown-service")
+	if err == nil {
+		t.Fatal("expected error for empty env var, got nil")
+	}
+	if !strings.Contains(err.Error(), "environment variable name is required") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestAdd_DuplicateKey(t *testing.T) {
 	setup(t)
 	cmd.SetReadPassword(func(_ string) (string, error) {
@@ -68,18 +132,6 @@ func TestAdd_DuplicateKey(t *testing.T) {
 		t.Fatal("expected error for duplicate key, got nil")
 	}
 	if !strings.Contains(err.Error(), "already registered") {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestAdd_UnknownKeyWithoutEnv(t *testing.T) {
-	setup(t)
-
-	err := executeCmd(t, "add", "unknown-service")
-	if err == nil {
-		t.Fatal("expected error for unknown key without --env, got nil")
-	}
-	if !strings.Contains(err.Error(), "--env") {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
@@ -98,6 +150,9 @@ func TestAdd_InvalidName(t *testing.T) {
 
 func TestAdd_DuplicateEnvVar(t *testing.T) {
 	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "", nil // accept default
+	})
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "my-secret-value", nil
 	})
@@ -114,6 +169,9 @@ func TestAdd_DuplicateEnvVar(t *testing.T) {
 
 func TestAdd_EmptyKey(t *testing.T) {
 	setup(t)
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "", nil // accept default
+	})
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "   ", nil
 	})
