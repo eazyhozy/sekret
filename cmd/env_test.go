@@ -21,8 +21,8 @@ func TestEnv_Empty(t *testing.T) {
 
 func TestEnv_WithKeys(t *testing.T) {
 	setup(t)
-	seedKey(t, "openai", "OPENAI_API_KEY", "sk-test123")
-	seedKey(t, "anthropic", "ANTHROPIC_API_KEY", "sk-ant-test456")
+	seedKey(t, "OPENAI_API_KEY", "sk-test123")
+	seedKey(t, "ANTHROPIC_API_KEY", "sk-ant-test456")
 
 	output := captureStdout(t, func() {
 		if err := executeCmd(t, "env"); err != nil {
@@ -38,9 +38,25 @@ func TestEnv_WithKeys(t *testing.T) {
 	}
 }
 
+func TestEnv_LegacyKeys(t *testing.T) {
+	setup(t)
+	seedLegacyKey(t, "openai", "OPENAI_API_KEY", "sk-test123")
+
+	output := captureStdout(t, func() {
+		if err := executeCmd(t, "env"); err != nil {
+			t.Fatalf("env command failed: %v", err)
+		}
+	})
+
+	// Legacy key should still produce correct export using name as keychain key
+	if !strings.Contains(output, `export OPENAI_API_KEY="sk-test123"`) {
+		t.Errorf("expected OPENAI_API_KEY export, got %q", output)
+	}
+}
+
 func TestEnv_ShellEscape(t *testing.T) {
 	setup(t)
-	seedKey(t, "test", "TEST_KEY", `value"with$special`)
+	seedKey(t, "TEST_KEY", `value"with$special`)
 
 	output := captureStdout(t, func() {
 		if err := executeCmd(t, "env"); err != nil {

@@ -78,3 +78,36 @@ func TestValidateFormat_NilEntry(t *testing.T) {
 		t.Error("expected true for nil entry")
 	}
 }
+
+func TestLookupByEnvVar(t *testing.T) {
+	tests := []struct {
+		envVar    string
+		wantName  string
+		wantFound bool
+	}{
+		{"OPENAI_API_KEY", "openai", true},
+		{"ANTHROPIC_API_KEY", "anthropic", true},
+		{"GEMINI_API_KEY", "gemini", true},
+		{"GITHUB_TOKEN", "github", true},
+		{"GROQ_API_KEY", "groq", true},
+		{"UNKNOWN_KEY", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.envVar, func(t *testing.T) {
+			entry := registry.LookupByEnvVar(tt.envVar)
+			if tt.wantFound {
+				if entry == nil {
+					t.Fatalf("expected entry for %q, got nil", tt.envVar)
+				}
+				if entry.Name != tt.wantName {
+					t.Errorf("got name %q, want %q", entry.Name, tt.wantName)
+				}
+			} else {
+				if entry != nil {
+					t.Errorf("expected nil for %q, got %+v", tt.envVar, entry)
+				}
+			}
+		})
+	}
+}

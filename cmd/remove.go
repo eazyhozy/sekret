@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/eazyhozy/sekret/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var removeCmd = &cobra.Command{
-	Use:   "remove <name>",
+	Use:   "remove <ENV_VAR>",
 	Short: "Remove a registered key",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runRemove,
@@ -20,20 +19,20 @@ func init() {
 }
 
 func runRemove(_ *cobra.Command, args []string) error {
-	name := strings.ToLower(args[0])
+	arg := args[0]
 
-	// Check if key exists
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
-	entry := cfg.FindKey(name)
-	if entry == nil {
-		return fmt.Errorf("key %q is not registered", name)
+
+	entry, err := resolveKey(cfg, arg)
+	if err != nil {
+		return fmt.Errorf("key %q is not registered", arg)
 	}
 
 	// Confirmation prompt
-	confirmed, err := readConfirm(fmt.Sprintf("  Remove '%s' (%s)? [y/N]: ", name, entry.EnvVar))
+	confirmed, err := readConfirm(fmt.Sprintf("  Remove '%s'? [y/N]: ", entry.EnvVar))
 	if err != nil {
 		return err
 	}
@@ -43,12 +42,12 @@ func runRemove(_ *cobra.Command, args []string) error {
 	}
 
 	// Delete from keychain
-	if err := store.Delete(name); err != nil {
+	if err := store.Delete(entry.KeychainKey()); err != nil {
 		return err
 	}
 
-	// Delete from config
-	if err := cfg.RemoveKey(name); err != nil {
+	// Delete from config (by env var)
+	if err := cfg.RemoveKey(entry.EnvVar); err != nil {
 		return err
 	}
 	if err := config.Save(cfg); err != nil {

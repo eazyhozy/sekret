@@ -88,7 +88,7 @@ func TestAddKey_DuplicateEnvVar(t *testing.T) {
 	}
 }
 
-func TestRemoveKey(t *testing.T) {
+func TestRemoveKey_ByEnvVar(t *testing.T) {
 	setupTestDir(t)
 
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
@@ -96,7 +96,7 @@ func TestRemoveKey(t *testing.T) {
 		t.Fatalf("AddKey failed: %v", err)
 	}
 
-	if err := cfg.RemoveKey("openai"); err != nil {
+	if err := cfg.RemoveKey("OPENAI_API_KEY"); err != nil {
 		t.Fatalf("RemoveKey failed: %v", err)
 	}
 	if len(cfg.Keys) != 0 {
@@ -106,9 +106,23 @@ func TestRemoveKey(t *testing.T) {
 
 func TestRemoveKey_NotFound(t *testing.T) {
 	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
-	err := cfg.RemoveKey("nonexistent")
+	err := cfg.RemoveKey("NONEXISTENT")
 	if err == nil {
 		t.Fatal("expected error for removing nonexistent key, got nil")
+	}
+}
+
+func TestKeychainKey_WithName(t *testing.T) {
+	entry := &config.KeyEntry{Name: "openai", EnvVar: "OPENAI_API_KEY"}
+	if got := entry.KeychainKey(); got != "openai" {
+		t.Errorf("KeychainKey() = %q, want %q", got, "openai")
+	}
+}
+
+func TestKeychainKey_WithoutName(t *testing.T) {
+	entry := &config.KeyEntry{Name: "", EnvVar: "MY_SERVICE_KEY"}
+	if got := entry.KeychainKey(); got != "MY_SERVICE_KEY" {
+		t.Errorf("KeychainKey() = %q, want %q", got, "MY_SERVICE_KEY")
 	}
 }
 

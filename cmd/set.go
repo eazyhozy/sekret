@@ -10,7 +10,7 @@ import (
 )
 
 var setCmd = &cobra.Command{
-	Use:   "set <name>",
+	Use:   "set <ENV_VAR>",
 	Short: "Update an existing API key",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runSet,
@@ -21,20 +21,22 @@ func init() {
 }
 
 func runSet(_ *cobra.Command, args []string) error {
-	name := strings.ToLower(args[0])
+	arg := args[0]
 
-	// Check if key exists
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
-	entry := cfg.FindKey(name)
-	if entry == nil {
-		return fmt.Errorf("key %q is not registered (use 'sekret add %s' first)", name, name)
+
+	entry, err := resolveKey(cfg, arg)
+	if err != nil {
+		return fmt.Errorf("key %q is not registered (use 'sekret add %s' first)", arg, arg)
 	}
 
+	keychainKey := entry.KeychainKey()
+
 	// Show current masked value
-	if current, err := store.Get(name); err == nil {
+	if current, err := store.Get(keychainKey); err == nil {
 		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Current: %s\n", maskKey(current))
 	}
 
@@ -50,14 +52,14 @@ func runSet(_ *cobra.Command, args []string) error {
 	}
 
 	// Validate format for known keys
-	regEntry := registry.Lookup(name)
+	regEntry := registry.LookupByEnvVar(entry.EnvVar)
 	if regEntry != nil && !registry.ValidateFormat(regEntry, value) {
 		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "  Warning: key does not match expected format for %q (expected prefix: %s)\n",
-			name, strings.Join(regEntry.Prefixes, " or "))
+			entry.EnvVar, strings.Join(regEntry.Prefixes, " or "))
 	}
 
 	// Update keychain
-	if err := store.Set(name, value); err != nil {
+	if err := store.Set(keychainKey, value); err != nil {
 		return err
 	}
 
