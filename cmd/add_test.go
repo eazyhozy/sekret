@@ -1,11 +1,12 @@
 package cmd_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/eazyhozy/sekret/cmd"
 	"github.com/eazyhozy/sekret/internal/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAdd_EnvVarDirect(t *testing.T) {
@@ -14,72 +15,47 @@ func TestAdd_EnvVarDirect(t *testing.T) {
 		return "sk-test-key-12345678", nil
 	})
 
-	if err := executeCmd(t, "add", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("add failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "add", "OPENAI_API_KEY"))
 
-	// Stored under env var key
 	val, err := testStore.Get("OPENAI_API_KEY")
-	if err != nil {
-		t.Fatalf("key not found in store: %v", err)
-	}
-	if val != "sk-test-key-12345678" {
-		t.Errorf("got %q, want %q", val, "sk-test-key-12345678")
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "sk-test-key-12345678", val)
 
 	cfg, _ := config.Load()
 	entry := cfg.FindKeyByEnvVar("OPENAI_API_KEY")
-	if entry == nil {
-		t.Fatal("key not found in config")
-	}
-	if entry.Name != "" {
-		t.Errorf("expected empty name, got %q", entry.Name)
-	}
+	require.NotNil(t, entry)
+	assert.Empty(t, entry.Name)
 }
 
 func TestAdd_Shorthand(t *testing.T) {
 	setup(t)
 	cmd.SetReadConfirm(func(_ string) (bool, error) {
-		return true, nil // confirm shorthand expansion
+		return true, nil
 	})
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "sk-test-key-12345678", nil
 	})
 
-	if err := executeCmd(t, "add", "openai"); err != nil {
-		t.Fatalf("add failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "add", "openai"))
 
 	val, err := testStore.Get("OPENAI_API_KEY")
-	if err != nil {
-		t.Fatalf("key not found in store: %v", err)
-	}
-	if val != "sk-test-key-12345678" {
-		t.Errorf("got %q, want %q", val, "sk-test-key-12345678")
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "sk-test-key-12345678", val)
 
 	cfg, _ := config.Load()
-	entry := cfg.FindKeyByEnvVar("OPENAI_API_KEY")
-	if entry == nil {
-		t.Fatal("key not found in config")
-	}
+	assert.NotNil(t, cfg.FindKeyByEnvVar("OPENAI_API_KEY"))
 }
 
 func TestAdd_ShorthandCancelled(t *testing.T) {
 	setup(t)
 	cmd.SetReadConfirm(func(_ string) (bool, error) {
-		return false, nil // reject shorthand expansion
+		return false, nil
 	})
 
-	if err := executeCmd(t, "add", "openai"); err != nil {
-		t.Fatalf("add should not return error on cancel: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "add", "openai"))
 
-	// Should NOT be registered
 	cfg, _ := config.Load()
-	if cfg.FindKeyByEnvVar("OPENAI_API_KEY") != nil {
-		t.Error("key should not be registered after cancel")
-	}
+	assert.Nil(t, cfg.FindKeyByEnvVar("OPENAI_API_KEY"))
 }
 
 func TestAdd_CustomEnvVar(t *testing.T) {
@@ -88,15 +64,10 @@ func TestAdd_CustomEnvVar(t *testing.T) {
 		return "my-secret-value", nil
 	})
 
-	if err := executeCmd(t, "add", "MY_SERVICE_KEY"); err != nil {
-		t.Fatalf("add failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "add", "MY_SERVICE_KEY"))
 
 	cfg, _ := config.Load()
-	entry := cfg.FindKeyByEnvVar("MY_SERVICE_KEY")
-	if entry == nil {
-		t.Fatal("key not found in config")
-	}
+	assert.NotNil(t, cfg.FindKeyByEnvVar("MY_SERVICE_KEY"))
 }
 
 func TestAdd_DuplicateEnvVar(t *testing.T) {
@@ -104,24 +75,16 @@ func TestAdd_DuplicateEnvVar(t *testing.T) {
 	seedKey(t, "OPENAI_API_KEY", "sk-existing")
 
 	err := executeCmd(t, "add", "OPENAI_API_KEY")
-	if err == nil {
-		t.Fatal("expected error for duplicate env var, got nil")
-	}
-	if !strings.Contains(err.Error(), "already registered") {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already registered")
 }
 
 func TestAdd_InvalidEnvVarName(t *testing.T) {
 	setup(t)
 
 	err := executeCmd(t, "add", "not-a-valid-thing")
-	if err == nil {
-		t.Fatal("expected error for invalid env var name, got nil")
-	}
-	if !strings.Contains(err.Error(), "invalid environment variable name") {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid environment variable name")
 }
 
 func TestAdd_EmptyKey(t *testing.T) {
@@ -131,10 +94,6 @@ func TestAdd_EmptyKey(t *testing.T) {
 	})
 
 	err := executeCmd(t, "add", "OPENAI_API_KEY")
-	if err == nil {
-		t.Fatal("expected error for empty key, got nil")
-	}
-	if !strings.Contains(err.Error(), "cannot be empty") {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot be empty")
 }

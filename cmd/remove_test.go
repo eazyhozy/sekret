@@ -1,11 +1,12 @@
 package cmd_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/eazyhozy/sekret/cmd"
 	"github.com/eazyhozy/sekret/internal/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRemove_Confirmed(t *testing.T) {
@@ -15,21 +16,13 @@ func TestRemove_Confirmed(t *testing.T) {
 		return true, nil
 	})
 
-	if err := executeCmd(t, "remove", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("remove failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "remove", "OPENAI_API_KEY"))
 
-	// Verify removed from store
 	_, err := testStore.Get("OPENAI_API_KEY")
-	if err == nil {
-		t.Error("key should be deleted from store")
-	}
+	assert.Error(t, err, "key should be deleted from store")
 
-	// Verify removed from config
 	cfg, _ := config.Load()
-	if cfg.FindKeyByEnvVar("OPENAI_API_KEY") != nil {
-		t.Error("key should be deleted from config")
-	}
+	assert.Nil(t, cfg.FindKeyByEnvVar("OPENAI_API_KEY"), "key should be deleted from config")
 }
 
 func TestRemove_ViaShorthand(t *testing.T) {
@@ -39,14 +32,10 @@ func TestRemove_ViaShorthand(t *testing.T) {
 		return true, nil
 	})
 
-	if err := executeCmd(t, "remove", "openai"); err != nil {
-		t.Fatalf("remove via shorthand failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "remove", "openai"))
 
 	_, err := testStore.Get("OPENAI_API_KEY")
-	if err == nil {
-		t.Error("key should be deleted from store")
-	}
+	assert.Error(t, err, "key should be deleted from store")
 }
 
 func TestRemove_LegacyKey(t *testing.T) {
@@ -56,20 +45,13 @@ func TestRemove_LegacyKey(t *testing.T) {
 		return true, nil
 	})
 
-	if err := executeCmd(t, "remove", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("remove failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "remove", "OPENAI_API_KEY"))
 
-	// Legacy key stored under name "openai"
 	_, err := testStore.Get("openai")
-	if err == nil {
-		t.Error("key should be deleted from store")
-	}
+	assert.Error(t, err, "key should be deleted from store")
 
 	cfg, _ := config.Load()
-	if cfg.FindKeyByEnvVar("OPENAI_API_KEY") != nil {
-		t.Error("key should be deleted from config")
-	}
+	assert.Nil(t, cfg.FindKeyByEnvVar("OPENAI_API_KEY"), "key should be deleted from config")
 }
 
 func TestRemove_Cancelled(t *testing.T) {
@@ -79,28 +61,17 @@ func TestRemove_Cancelled(t *testing.T) {
 		return false, nil
 	})
 
-	if err := executeCmd(t, "remove", "OPENAI_API_KEY"); err != nil {
-		t.Fatalf("remove failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "remove", "OPENAI_API_KEY"))
 
-	// Verify still exists
 	val, err := testStore.Get("OPENAI_API_KEY")
-	if err != nil {
-		t.Fatalf("key should still exist: %v", err)
-	}
-	if val != "sk-keep-me" {
-		t.Errorf("got %q, want %q", val, "sk-keep-me")
-	}
+	require.NoError(t, err, "key should still exist")
+	assert.Equal(t, "sk-keep-me", val)
 }
 
 func TestRemove_NonexistentKey(t *testing.T) {
 	setup(t)
 
 	err := executeCmd(t, "remove", "NONEXISTENT_KEY")
-	if err == nil {
-		t.Fatal("expected error for nonexistent key, got nil")
-	}
-	if !strings.Contains(err.Error(), "not registered") {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not registered")
 }

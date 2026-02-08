@@ -3,25 +3,23 @@ package cmd_test
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/eazyhozy/sekret/cmd"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func writeScanFile(t *testing.T, dir, name, content string) string {
 	t.Helper()
 	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	return path
 }
 
 func setupScan(t *testing.T) {
 	t.Helper()
 	setup(t)
-	// Override exit function to prevent os.Exit in tests
 	cmd.SetExitFunc(func(_ int) {})
 	t.Cleanup(func() {
 		cmd.SetExitFunc(os.Exit)
@@ -36,20 +34,12 @@ export EDITOR="vim"
 `)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if !strings.Contains(output, "No plaintext keys found") {
-		t.Errorf("expected 'No plaintext keys found' message, got %q", output)
-	}
-	if !strings.Contains(output, "Scanned 1 file") {
-		t.Errorf("expected scan summary, got %q", output)
-	}
-	if !strings.Contains(output, "clean") {
-		t.Errorf("expected 'clean' in summary, got %q", output)
-	}
+	assert.Contains(t, output, "No plaintext keys found")
+	assert.Contains(t, output, "Scanned 1 file")
+	assert.Contains(t, output, "clean")
 }
 
 func TestScan_FindsKeys(t *testing.T) {
@@ -61,30 +51,15 @@ export GITHUB_TOKEN="ghp_abcdef1234567890"
 `)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if !strings.Contains(output, "Scanned 1 file") {
-		t.Errorf("expected scan summary, got %q", output)
-	}
-	if !strings.Contains(output, "2 keys found") {
-		t.Errorf("expected '2 keys found' in summary, got %q", output)
-	}
-	if !strings.Contains(output, "Found 2 potential plaintext keys") {
-		t.Errorf("expected 'Found 2' message, got %q", output)
-	}
-	if !strings.Contains(output, "OPENAI_API_KEY") {
-		t.Errorf("expected OPENAI_API_KEY in output, got %q", output)
-	}
-	if !strings.Contains(output, "GITHUB_TOKEN") {
-		t.Errorf("expected GITHUB_TOKEN in output, got %q", output)
-	}
-	// Values should be masked
-	if strings.Contains(output, "sk-proj-abcdef1234") {
-		t.Error("full key value should not appear in output")
-	}
+	assert.Contains(t, output, "Scanned 1 file")
+	assert.Contains(t, output, "2 keys found")
+	assert.Contains(t, output, "Found 2 potential plaintext keys")
+	assert.Contains(t, output, "OPENAI_API_KEY")
+	assert.Contains(t, output, "GITHUB_TOKEN")
+	assert.NotContains(t, output, "sk-proj-abcdef1234")
 }
 
 func TestScan_AnnotateSafeToRemove(t *testing.T) {
@@ -96,14 +71,10 @@ func TestScan_AnnotateSafeToRemove(t *testing.T) {
 `)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if !strings.Contains(output, "safe to remove") {
-		t.Errorf("expected 'safe to remove' annotation, got %q", output)
-	}
+	assert.Contains(t, output, "safe to remove")
 }
 
 func TestScan_AnnotateValueDiffers(t *testing.T) {
@@ -115,14 +86,10 @@ func TestScan_AnnotateValueDiffers(t *testing.T) {
 `)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if !strings.Contains(output, "value differs!") {
-		t.Errorf("expected 'value differs!' annotation, got %q", output)
-	}
+	assert.Contains(t, output, "value differs!")
 }
 
 func TestScan_PathDirectory(t *testing.T) {
@@ -132,17 +99,11 @@ func TestScan_PathDirectory(t *testing.T) {
 	writeScanFile(t, dir, "b.sh", `export AUTH_TOKEN="token_value_here"`)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", dir); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", dir))
 	})
 
-	if !strings.Contains(output, "MY_API_KEY") {
-		t.Errorf("expected MY_API_KEY in output, got %q", output)
-	}
-	if !strings.Contains(output, "AUTH_TOKEN") {
-		t.Errorf("expected AUTH_TOKEN in output, got %q", output)
-	}
+	assert.Contains(t, output, "MY_API_KEY")
+	assert.Contains(t, output, "AUTH_TOKEN")
 }
 
 func TestScan_ExitCode(t *testing.T) {
@@ -155,14 +116,10 @@ func TestScan_ExitCode(t *testing.T) {
 	path := writeScanFile(t, dir, ".zshrc", `export OPENAI_API_KEY="sk-proj-abcdef1234"`)
 
 	captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if exitCode != 1 {
-		t.Errorf("expected exit code 1, got %d", exitCode)
-	}
+	assert.Equal(t, 1, exitCode)
 }
 
 func TestScan_ExitCodeZero(t *testing.T) {
@@ -175,15 +132,10 @@ func TestScan_ExitCodeZero(t *testing.T) {
 	path := writeScanFile(t, dir, "config.sh", `export PATH="/usr/bin"`)
 
 	captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	// exitFunc should not have been called
-	if exitCode != -1 {
-		t.Errorf("expected exit func not to be called, got code %d", exitCode)
-	}
+	assert.Equal(t, -1, exitCode, "exitFunc should not have been called")
 }
 
 func TestScan_SummaryMultipleFiles(t *testing.T) {
@@ -193,32 +145,20 @@ func TestScan_SummaryMultipleFiles(t *testing.T) {
 	writeScanFile(t, dir, "b.sh", `export PATH="/usr/bin"`)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", dir); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", dir))
 	})
 
-	if !strings.Contains(output, "Scanned 2 files") {
-		t.Errorf("expected 'Scanned 2 files', got %q", output)
-	}
-	if !strings.Contains(output, "1 key found") {
-		t.Errorf("expected '1 key found' in summary, got %q", output)
-	}
-	if !strings.Contains(output, "clean") {
-		t.Errorf("expected 'clean' for file with no keys, got %q", output)
-	}
+	assert.Contains(t, output, "Scanned 2 files")
+	assert.Contains(t, output, "1 key found")
+	assert.Contains(t, output, "clean")
 }
 
 func TestScan_PathNotFound(t *testing.T) {
 	setupScan(t)
 
 	err := executeCmd(t, "scan", "--path", "/nonexistent/path/file.sh")
-	if err == nil {
-		t.Fatal("expected error for nonexistent path")
-	}
-	if !strings.Contains(err.Error(), "no such file") {
-		t.Errorf("expected 'no such file' error, got %q", err.Error())
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no such file")
 }
 
 func TestScan_DuplicateKeyAcrossFiles(t *testing.T) {
@@ -228,21 +168,12 @@ func TestScan_DuplicateKeyAcrossFiles(t *testing.T) {
 	writeScanFile(t, dir, "b.sh", `export OPENAI_API_KEY="sk-proj-different9999"`)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", dir); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", dir))
 	})
 
-	if !strings.Contains(output, "Found 2 potential plaintext keys") {
-		t.Errorf("expected both duplicates reported, got %q", output)
-	}
-	// Both file names should appear
-	if !strings.Contains(output, "a.sh") {
-		t.Errorf("expected a.sh in output, got %q", output)
-	}
-	if !strings.Contains(output, "b.sh") {
-		t.Errorf("expected b.sh in output, got %q", output)
-	}
+	assert.Contains(t, output, "Found 2 potential plaintext keys")
+	assert.Contains(t, output, "a.sh")
+	assert.Contains(t, output, "b.sh")
 }
 
 func TestScan_SingularKey(t *testing.T) {
@@ -251,12 +182,8 @@ func TestScan_SingularKey(t *testing.T) {
 	path := writeScanFile(t, dir, ".zshrc", `export OPENAI_API_KEY="sk-proj-abcdef1234"`)
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "scan", "--path", path); err != nil {
-			t.Fatalf("scan command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "scan", "--path", path))
 	})
 
-	if !strings.Contains(output, "Found 1 potential plaintext key:") {
-		t.Errorf("expected singular 'key' in output, got %q", output)
-	}
+	assert.Contains(t, output, "Found 1 potential plaintext key:")
 }

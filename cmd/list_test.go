@@ -3,14 +3,14 @@ package cmd_test
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestList_Empty(t *testing.T) {
 	setup(t)
-
-	if err := executeCmd(t, "list"); err != nil {
-		t.Fatalf("list command failed: %v", err)
-	}
+	require.NoError(t, executeCmd(t, "list"))
 }
 
 func TestList_WithKeys(t *testing.T) {
@@ -18,17 +18,11 @@ func TestList_WithKeys(t *testing.T) {
 	seedKey(t, "OPENAI_API_KEY", "sk-abcdefghijklmnop")
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "list"); err != nil {
-			t.Fatalf("list command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "list"))
 	})
 
-	if !strings.Contains(output, "OPENAI_API_KEY") {
-		t.Errorf("expected env var in output, got %q", output)
-	}
-	if strings.Contains(output, "sk-abcdefghijklmnop") {
-		t.Error("full key should not appear in list output")
-	}
+	assert.Contains(t, output, "OPENAI_API_KEY")
+	assert.NotContains(t, output, "sk-abcdefghijklmnop")
 }
 
 func TestList_NoNameColumn(t *testing.T) {
@@ -36,20 +30,11 @@ func TestList_NoNameColumn(t *testing.T) {
 	seedKey(t, "OPENAI_API_KEY", "sk-abcdefghijklmnop")
 
 	output := captureStdout(t, func() {
-		if err := executeCmd(t, "list"); err != nil {
-			t.Fatalf("list command failed: %v", err)
-		}
+		require.NoError(t, executeCmd(t, "list"))
 	})
 
-	// Header should start with "Env Variable", not "Name"
 	lines := strings.Split(output, "\n")
-	if len(lines) < 1 {
-		t.Fatal("expected output lines")
-	}
-	if strings.HasPrefix(strings.TrimSpace(lines[0]), "Name") {
-		t.Error("list output should not have a Name column")
-	}
-	if !strings.HasPrefix(strings.TrimSpace(lines[0]), "Env Variable") {
-		t.Errorf("expected header to start with 'Env Variable', got %q", lines[0])
-	}
+	require.NotEmpty(t, lines)
+	assert.False(t, strings.HasPrefix(strings.TrimSpace(lines[0]), "Name"))
+	assert.True(t, strings.HasPrefix(strings.TrimSpace(lines[0]), "Env Variable"))
 }
