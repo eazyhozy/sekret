@@ -128,3 +128,13 @@ func (c *Config) FindKey(name string) *KeyEntry {
 	}
 	return nil
 }
+
+// FindKeyByEnvVar returns the key entry for the given env var, or nil if not found.
+func (c *Config) FindKeyByEnvVar(envVar string) *KeyEntry {
+	for i := range c.Keys {
+		if c.Keys[i].EnvVar == envVar {
+			return &c.Keys[i]
+		}
+	}
+	return nil
+}
