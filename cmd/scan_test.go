@@ -85,9 +85,6 @@ export GITHUB_TOKEN="ghp_abcdef1234567890"
 	if strings.Contains(output, "sk-proj-abcdef1234") {
 		t.Error("full key value should not appear in output")
 	}
-	if !strings.Contains(output, "sekret import") {
-		t.Errorf("expected 'sekret import' suggestion, got %q", output)
-	}
 }
 
 func TestScan_AnnotateSafeToRemove(t *testing.T) {

@@ -97,8 +97,6 @@ func runScan(_ *cobra.Command, _ []string) error {
 		fmt.Println(line)
 	}
 
-	fmt.Println("\nRun 'sekret import' to migrate these keys to the OS keychain.")
-
 	// Exit code 1 when keys are found
 	exitFunc(1)
 	return nil
