@@ -10,6 +10,14 @@ sekret stores your keys in the OS keychain (macOS Keychain, GNOME Keyring) and l
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install eazyhozy/sekret/sekret
+```
+
+### Go
+
 ```bash
 go install github.com/eazyhozy/sekret@latest
 ```
