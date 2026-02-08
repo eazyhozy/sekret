@@ -1,0 +1,42 @@
+version: 2
+
+builds:
+  - binary: sekret
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^test:"
+
+brews:
+  - repository:
+      owner: eazyhozy
+      name: homebrew-sekret
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/eazyhozy/sekret"
+    description: "Secure your API keys in OS keychain, load them as env vars"
+    license: "MIT"
+    install: |
+      bin.install "sekret"
+    test: |
+      system "#{bin}/sekret", "--help"
