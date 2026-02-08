@@ -23,6 +23,9 @@ func setup(t *testing.T) {
 	cmd.SetReadPassword(func(_ string) (string, error) {
 		return "", fmt.Errorf("readPassword not configured for this test")
 	})
+	cmd.SetReadInput(func(_ string) (string, error) {
+		return "", fmt.Errorf("readInput not configured for this test")
+	})
 	cmd.SetReadConfirm(func(_ string) (bool, error) {
 		return false, fmt.Errorf("readConfirm not configured for this test")
 	})
@@ -30,6 +33,7 @@ func setup(t *testing.T) {
 		config.SetPath("")
 		cmd.SetStore(keychain.NewOSStore())
 		cmd.SetReadPassword(nil)
+		cmd.SetReadInput(nil)
 		cmd.SetReadConfirm(nil)
 		testStore = nil
 	})

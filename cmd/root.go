@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -33,6 +34,26 @@ var readPassword = func(prompt string) (string, error) {
 // SetReadPassword overrides the password reader (for testing).
 func SetReadPassword(fn func(string) (string, error)) {
 	readPassword = fn
+}
+
+// readInput reads a line of visible text from the user.
+// Returns empty string if user presses Enter without typing.
+// Override with SetReadInput() for testing.
+var readInput = func(prompt string) (string, error) {
+	fmt.Fprint(os.Stderr, prompt)
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", fmt.Errorf("failed to read input: %w", err)
+		}
+		return "", fmt.Errorf("failed to read input: EOF")
+	}
+	return scanner.Text(), nil
+}
+
+// SetReadInput overrides the input reader (for testing).
+func SetReadInput(fn func(string) (string, error)) {
+	readInput = fn
 }
 
 // readConfirm reads a y/N confirmation from the user.
