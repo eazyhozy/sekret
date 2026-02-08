@@ -209,6 +209,42 @@ func TestScan_SummaryMultipleFiles(t *testing.T) {
 	}
 }
 
+func TestScan_PathNotFound(t *testing.T) {
+	setupScan(t)
+
+	err := executeCmd(t, "scan", "--path", "/nonexistent/path/file.sh")
+	if err == nil {
+		t.Fatal("expected error for nonexistent path")
+	}
+	if !strings.Contains(err.Error(), "no such file") {
+		t.Errorf("expected 'no such file' error, got %q", err.Error())
+	}
+}
+
+func TestScan_DuplicateKeyAcrossFiles(t *testing.T) {
+	setupScan(t)
+	dir := t.TempDir()
+	writeScanFile(t, dir, "a.sh", `export OPENAI_API_KEY="sk-proj-abcdef1234"`)
+	writeScanFile(t, dir, "b.sh", `export OPENAI_API_KEY="sk-proj-different9999"`)
+
+	output := captureStdout(t, func() {
+		if err := executeCmd(t, "scan", "--path", dir); err != nil {
+			t.Fatalf("scan command failed: %v", err)
+		}
+	})
+
+	if !strings.Contains(output, "Found 2 potential plaintext keys") {
+		t.Errorf("expected both duplicates reported, got %q", output)
+	}
+	// Both file names should appear
+	if !strings.Contains(output, "a.sh") {
+		t.Errorf("expected a.sh in output, got %q", output)
+	}
+	if !strings.Contains(output, "b.sh") {
+		t.Errorf("expected b.sh in output, got %q", output)
+	}
+}
+
 func TestScan_SingularKey(t *testing.T) {
 	setupScan(t)
 	dir := t.TempDir()

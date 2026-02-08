@@ -104,23 +104,16 @@ func runScan(_ *cobra.Command, _ []string) error {
 
 // printScanSummary prints which files were scanned and how many keys each had.
 func printScanSummary(results []fileScanResult) {
-	scanned := 0
+	fmt.Printf("Scanned %d %s:\n", len(results), pluralize(len(results), "file", "files"))
 	for _, r := range results {
-		if !r.skipped {
-			scanned++
-		}
-	}
-
-	fmt.Printf("Scanned %d %s:\n", scanned, pluralize(scanned, "file", "files"))
-	for _, r := range results {
-		if r.skipped {
-			continue
-		}
 		displayPath := shortenHome(r.path)
-		count := len(r.findings)
-		if count == 0 {
+		switch {
+		case r.skipped:
+			fmt.Printf("  %-28s doesn't exist\n", displayPath)
+		case len(r.findings) == 0:
 			fmt.Printf("  %-28s clean\n", displayPath)
-		} else {
+		default:
+			count := len(r.findings)
 			fmt.Printf("  %-28s %d %s found\n", displayPath, count, pluralize(count, "key", "keys"))
 		}
 	}
