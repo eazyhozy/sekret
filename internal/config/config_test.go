@@ -3,6 +3,7 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/eazyhozy/sekret/internal/config"
@@ -69,6 +70,21 @@ func TestAddKey_Duplicate(t *testing.T) {
 	err := cfg.AddKey("openai", "OPENAI_API_KEY")
 	if err == nil {
 		t.Fatal("expected error for duplicate key, got nil")
+	}
+}
+
+func TestAddKey_DuplicateEnvVar(t *testing.T) {
+	cfg := &config.Config{Version: 1, Keys: []config.KeyEntry{}}
+	if err := cfg.AddKey("openai", "OPENAI_API_KEY"); err != nil {
+		t.Fatalf("first AddKey failed: %v", err)
+	}
+
+	err := cfg.AddKey("my-key", "OPENAI_API_KEY")
+	if err == nil {
+		t.Fatal("expected error for duplicate env var, got nil")
+	}
+	if !strings.Contains(err.Error(), "already used by") {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 

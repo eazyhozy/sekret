@@ -96,6 +96,22 @@ func TestAdd_InvalidName(t *testing.T) {
 	}
 }
 
+func TestAdd_DuplicateEnvVar(t *testing.T) {
+	setup(t)
+	cmd.SetReadPassword(func(_ string) (string, error) {
+		return "my-secret-value", nil
+	})
+	seedKey(t, "openai", "OPENAI_API_KEY", "sk-existing")
+
+	err := executeCmd(t, "add", "my-key", "--env", "OPENAI_API_KEY")
+	if err == nil {
+		t.Fatal("expected error for duplicate env var, got nil")
+	}
+	if !strings.Contains(err.Error(), "already used by") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestAdd_EmptyKey(t *testing.T) {
 	setup(t)
 	cmd.SetReadPassword(func(_ string) (string, error) {
