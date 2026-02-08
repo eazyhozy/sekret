@@ -157,6 +157,34 @@ func MaskValue(value string) string {
 	return prefix + "..." + suffix
 }
 
+// ResolvePath resolves a --path argument to a list of scannable file paths.
+// If path is a file, returns it as a single-element slice.
+// If path is a directory, returns all regular files in it (non-recursive).
+func ResolvePath(path string) ([]string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if !info.IsDir() {
+		return []string{path}, nil
+	}
+
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var paths []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		paths = append(paths, filepath.Join(path, e.Name()))
+	}
+	return paths, nil
+}
+
 // unquote removes surrounding double or single quotes from a value.
 func unquote(s string) string {
 	s = strings.TrimSpace(s)
