@@ -105,6 +105,33 @@ export PATH
 	assert.Empty(t, findings)
 }
 
+func TestScanFile_EmptyQuotedValue(t *testing.T) {
+	content := `export OPENAI_API_KEY=""
+export GITHUB_TOKEN=''
+`
+	path := writeTempFile(t, content)
+
+	findings, err := ScanFile(path)
+	require.NoError(t, err)
+	require.Len(t, findings, 2)
+	assert.Equal(t, "OPENAI_API_KEY", findings[0].EnvVar)
+	assert.Equal(t, "", findings[0].Value)
+	assert.Equal(t, "GITHUB_TOKEN", findings[1].EnvVar)
+	assert.Equal(t, "", findings[1].Value)
+}
+
+func TestScanFile_EmptyUnquotedValue(t *testing.T) {
+	content := `export OPENAI_API_KEY=
+`
+	path := writeTempFile(t, content)
+
+	findings, err := ScanFile(path)
+	require.NoError(t, err)
+	require.Len(t, findings, 1)
+	assert.Equal(t, "OPENAI_API_KEY", findings[0].EnvVar)
+	assert.Equal(t, "", findings[0].Value)
+}
+
 func TestScanFile_MultipleFindings(t *testing.T) {
 	content := `export EDITOR="vim"
 export OPENAI_API_KEY="sk-proj-abc123"
