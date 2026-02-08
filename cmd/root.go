@@ -59,6 +59,23 @@ func SetReadConfirm(fn func(string) (bool, error)) {
 	readConfirm = fn
 }
 
+// readChoice reads a single-line choice from the user.
+// Override with SetReadChoice() for testing.
+var readChoice = func(prompt string) (string, error) {
+	fmt.Fprint(os.Stderr, prompt)
+	var answer string
+	if _, err := fmt.Fscanln(os.Stdin, &answer); err != nil {
+		// EOF or empty input (just Enter) — return empty string
+		return "", nil
+	}
+	return answer, nil
+}
+
+// SetReadChoice overrides the choice reader (for testing).
+func SetReadChoice(fn func(string) (string, error)) {
+	readChoice = fn
+}
+
 var rootCmd = &cobra.Command{
 	Use:     "sekret",
 	Version: version,

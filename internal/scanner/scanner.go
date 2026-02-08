@@ -22,7 +22,7 @@ type Finding struct {
 var secretSuffixes = []string{"_KEY", "_TOKEN", "_SECRET", "_CREDENTIALS"}
 
 // exportPattern matches `export KEY=VALUE` statements.
-var exportPattern = regexp.MustCompile(`^\s*export\s+([A-Za-z_][A-Za-z0-9_]*)=(.+)$`)
+var exportPattern = regexp.MustCompile(`^\s*export\s+([A-Za-z_][A-Za-z0-9_]*)=(.*)$`)
 
 // knownPrefixes are API key prefixes used for mask display (longest first).
 var knownPrefixes = []string{

@@ -27,11 +27,15 @@ func setup(t *testing.T) {
 	cmd.SetReadConfirm(func(_ string) (bool, error) {
 		return false, fmt.Errorf("readConfirm not configured for this test")
 	})
+	cmd.SetReadChoice(func(_ string) (string, error) {
+		return "", fmt.Errorf("readChoice not configured for this test")
+	})
 	t.Cleanup(func() {
 		config.SetPath("")
 		cmd.SetStore(keychain.NewOSStore())
 		cmd.SetReadPassword(nil)
 		cmd.SetReadConfirm(nil)
+		cmd.SetReadChoice(nil)
 		testStore = nil
 	})
 }
