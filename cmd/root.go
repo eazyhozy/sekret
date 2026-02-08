@@ -12,6 +12,9 @@ import (
 	"golang.org/x/term"
 )
 
+// version is set at build time via ldflags.
+var version = "dev"
+
 var validEnvVarPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // store is the keychain store used by all commands.
@@ -57,8 +60,9 @@ func SetReadConfirm(fn func(string) (bool, error)) {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "sekret",
-	Short: "Secure your API keys in OS keychain, load them as env vars",
+	Use:     "sekret",
+	Version: version,
+	Short:   "Secure your API keys in OS keychain, load them as env vars",
 	Long: `sekret stores your API keys in the OS keychain and injects them
 as environment variables. No more plaintext secrets in .zshrc.
 
