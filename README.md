@@ -2,6 +2,8 @@
 
 Secure your API keys in OS keychain, load them as env vars. No more plaintext secrets in `.zshrc`.
 
+<img src="demo/demo.svg" alt="sekret demo" />
+
 ## Why sekret?
 
 Most developers store API keys as plaintext `export` statements in `.zshrc` or `.env` files. With the growing number of AI tools (Claude Code, Cursor, Aider, Gemini CLI, etc.), managing these keys securely becomes increasingly important.
