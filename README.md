@@ -40,6 +40,16 @@ source ~/.zshrc
 # Done. Everything works as before.
 ```
 
+### Already have keys in your shell config?
+
+```bash
+# Detect plaintext keys in your shell config files
+sekret scan
+
+# Interactively migrate them to the keychain
+sekret import
+```
+
 ## Commands
 
 | Command | Description |
@@ -49,6 +59,8 @@ source ~/.zshrc
 | `sekret set <ENV_VAR>` | Update an existing key |
 | `sekret remove <ENV_VAR>` | Remove a key (with confirmation) |
 | `sekret env` | Output all keys as `export` statements |
+| `sekret scan` | Detect plaintext API keys in shell config files |
+| `sekret import` | Interactively migrate plaintext keys into sekret |
 
 ## Built-in Shorthands
 
@@ -70,19 +82,21 @@ sekret add MY_SERVICE_KEY
 
 ## How It Works
 
-- **Key values** are stored in the OS keychain (OS-level encryption)
+- **Key values** are stored in the OS keychain via [go-keyring](https://github.com/zalando/go-keyring) (OS-level encryption)
 - **Metadata** (registered env var list) is stored in `~/.config/sekret/config.json`
 - Key values are **never written to any file**
 - Key input is always interactive (never accepted as CLI arguments, protecting shell history)
 
 ## Platform Support
 
+sekret uses [go-keyring](https://github.com/zalando/go-keyring) to interface with the OS keychain:
+
 | OS | Backend | Status |
 |----|---------|--------|
 | macOS | Keychain | Supported |
 | Linux (Desktop) | GNOME Keyring / KWallet | Supported |
-| Windows | Credential Manager | Planned |
-| Linux (Headless) | Encrypted file fallback | Planned |
+| Windows | Credential Manager | Planned (v0.3) |
+| Linux (Headless) | — | Planned (v0.4) |
 
 ## License
 
