@@ -173,14 +173,12 @@ func main() {
 		// --- Type sekret add <shorthand> ---
 		typeText("sekret add " + r.shorthand)
 		pressEnter()
-		sleep(0.3)
 
 		// --- Shorthand confirmation prompt ---
 		outputText(fmt.Sprintf(`  "%s" -> %s. Continue? [Y/n]: `, r.shorthand, r.envVar))
 		sleep(0.3)
 		typeText("y")
 		pressEnter()
-		sleep(0.3)
 
 		// --- Password prompt ---
 		outputText("  API Key: ")
@@ -191,7 +189,6 @@ func main() {
 			emit(charDelay, "*")
 		}
 		pressEnter()
-		sleep(0.3)
 
 		// --- Saved message ---
 		outputLine(fmt.Sprintf("  Saved to OS keychain (%s)", r.envVar))
@@ -199,9 +196,9 @@ func main() {
 
 		// --- sekret list ---
 		showPrompt()
+		sleep(0.3)
 		typeText("sekret list")
 		pressEnter()
-		sleep(0.3)
 
 		listLines := loadListLines(r.listFile)
 		for _, line := range listLines {
@@ -211,12 +208,13 @@ func main() {
 
 		// --- eval "$(sekret env)" ---
 		showPrompt()
+		sleep(0.3)
 		typeText(`eval "$(sekret env)"`)
 		pressEnter()
-		sleep(0.5)
 
 		// --- # loaded message ---
 		showPrompt()
+		sleep(0.3)
 		typeText(fmt.Sprintf("# $%s loaded!", r.envVar))
 		sleep(1.5)
 
@@ -227,6 +225,8 @@ func main() {
 		}
 	}
 
-	// Final pause so the last frame stays visible.
-	sleep(2.0)
+	// Final pause so the last frame stays visible before looping.
+	// Emit a no-op event after sleeping so svg-term includes the pause in its duration.
+	sleep(3.0)
+	emit(0, "")
 }
