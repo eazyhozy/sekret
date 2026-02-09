@@ -192,11 +192,10 @@ func main() {
 
 		// --- Saved message ---
 		outputLine(fmt.Sprintf("  Saved to OS keychain (%s)", r.envVar))
-		sleep(0.8)
 
 		// --- sekret list ---
 		showPrompt()
-		sleep(0.3)
+		sleep(0.8)
 		typeText("sekret list")
 		pressEnter()
 
@@ -204,11 +203,10 @@ func main() {
 		for _, line := range listLines {
 			outputLine(line)
 		}
-		sleep(1.0)
 
 		// --- eval "$(sekret env)" ---
 		showPrompt()
-		sleep(0.3)
+		sleep(1.0)
 		typeText(`eval "$(sekret env)"`)
 		pressEnter()
 
