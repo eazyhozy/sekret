@@ -4,7 +4,9 @@ Output demo/demo.gif
 
 Set Shell "zsh"
 Set Theme "Catppuccin Mocha"
+Set FontFamily "JetBrains Mono"
 Set FontSize 22
+Set LineHeight 1.2
 Set Width 1200
 Set Height 600
 Set Padding 30
