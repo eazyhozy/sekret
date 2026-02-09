@@ -28,22 +28,7 @@ Type "sk-proj-sekret-v0.2.0"
 Enter
 Sleep 1.5s
 
-# Step 2: Register Anthropic key (shorthand)
-Type "sekret add anthropic"
-Enter
-Sleep 1s
-
-# Confirm shorthand
-Type "y"
-Enter
-Sleep 500ms
-
-# Enter API key (masked input)
-Type "sk-ant-sekret-v0.2.0"
-Enter
-Sleep 1.5s
-
-# Step 3: Register custom key (direct env var)
+# Step 2: Register custom key (direct env var)
 Type "sekret add MY_SERVICE_KEY"
 Enter
 Sleep 500ms
@@ -53,17 +38,17 @@ Type "msk-sekret-v0.2.0"
 Enter
 Sleep 1.5s
 
-# Step 4: List registered keys
+# Step 3: List registered keys
 Type "sekret list"
 Enter
 Sleep 3s
 
-# Step 5: Load as env vars
+# Step 4: Load as env vars
 Type 'eval "$(sekret env)"'
 Enter
 Sleep 1s
 
-# Step 6: Verify
+# Step 5: Verify
 Type "echo $OPENAI_API_KEY"
 Enter
 Sleep 3s
