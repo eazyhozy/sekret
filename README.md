@@ -1,5 +1,17 @@
 # sekret
 
+> **This project is archived and no longer maintained.**
+>
+> After real-world usage, I concluded that the simplest alternative — storing secrets in `.zshenv` with `.gitignore` — is sufficient for personal development. Key reasons:
+> - `eval $(sekret env)` doesn't work in non-interactive shells (e.g. AI coding assistants that spawn subshells)
+> - The security benefit of OS keychain over a gitignored dotfile is marginal for single-developer use
+> - Team/shared secret management requires a fundamentally different architecture
+>
+> The code remains available as a reference for Go CLI design, OS keychain integration, and Homebrew distribution.
+> See [Discussion #35](https://github.com/eazyhozy/sekret/discussions/35) for the full retrospective.
+
+---
+
 Secure your API keys in OS keychain, load them as env vars. No more plaintext secrets in `.zshrc`.
 
 <img src="demo/demo.svg" alt="sekret demo" />
